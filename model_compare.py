@@ -44,6 +44,10 @@ def main(area_id, monthly, model_nm, method):
     checkpoint_path = os.path.join('checkpoint', f'shp-{area_id}', f'spei-{monthly}', f'{model_nm}', f'{method}')
     log_path = os.path.join('log', f'shp-{area_id}', f'spei-{monthly}', f'{model_nm}', f'{method}')
     save_path = os.path.join('save', f'shp-{area_id}', f'spei-{monthly}', f'{model_nm}', f'{method}')
+
+    if os.path.exists(checkpoint_path):
+        return None
+
     if method == 'None':
         df = pd.read_csv(os.path.join('cache', 'spei', f'shp_{area_id}', f'spei_{monthly}', f'VMD_dec.csv'))[['ORIG']]
     else:
