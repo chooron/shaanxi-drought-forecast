@@ -1,2 +1,9 @@
 *.ckpt
 *.db
+cache/ShaanXi
+db
+log
+nc
+*.nc
+project
+save
