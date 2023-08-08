@@ -3,7 +3,7 @@ import numpy as np
 import os
 import json
 from darts import TimeSeries, concatenate
-from darts.models import DLinearModel
+from darts.models import DLinearModel, LightGBMModel
 from darts.metrics import r2_score, mape, mae, rmse, mse
 from darts.dataprocessing.transformers import Scaler
 
@@ -49,9 +49,11 @@ def main(area_id, monthly, model_nm, method):
         return None
 
     if method == 'None':
-        df = pd.read_csv(os.path.join('cache', 'spei', f'shp_{area_id}', f'spei_{monthly}', f'VMD_dec.csv'))[['ORIG']]
+        df = pd.read_csv(os.path.join('cache', 'YunLin', 'spei', f'shp_{area_id}', f'spei_{monthly}', f'VMD_dec.csv'))[
+            ['ORIG']]
     else:
-        df = pd.read_csv(os.path.join('cache', 'spei', f'shp_{area_id}', f'spei_{monthly}', f'{method}_dec.csv'))
+        df = pd.read_csv(
+            os.path.join('cache', 'YunLin', f'shp_{area_id}', f'spei_{monthly}', f'{method}_dec.csv'))
     series_cols = df.columns.values.tolist()
     df['DATE'] = pd.date_range('19790101', '20190101', freq='m')[monthly - 1:]
 
@@ -73,10 +75,17 @@ def main(area_id, monthly, model_nm, method):
     val_target_scaled = target_scaler.transform(val_target)
     # test_target_scaled = target_scaler.transform(test_target)
 
-    model: DLinearModel = get_model(model_nm)
-    trainer = get_trainer(checkpoint_path, log_path)
-    model.fit(series=train_target_scaled, past_covariates=train_series_scaled, trainer=trainer,
-              val_series=val_target_scaled, val_past_covariates=val_series_scaled, epochs=EPOCH)
+    model: LightGBMModel = get_model(model_nm)
+    if model_nm in ['LightGBM', 'XBGoost']:
+        model.fit(series=train_target_scaled, past_covariates=train_series_scaled,
+                  val_series=val_target_scaled, val_past_covariates=val_series_scaled)
+    else:
+        trainer = get_trainer(checkpoint_path, log_path)
+        # torch model fit
+        model.fit(series=train_target_scaled, past_covariates=train_series_scaled, trainer=trainer,
+                  val_series=val_target_scaled, val_past_covariates=val_series_scaled, epochs=EPOCH)
+    model.fit(series=train_target_scaled, past_covariates=train_series_scaled,
+              val_series=val_target_scaled, val_past_covariates=val_series_scaled)
     pred = model.predict(n=len(test_series) - look_back, series=val_target_scaled,
                          past_covariates=test_series_scaled)
     train_pred = model.historical_forecasts(series=train_target_scaled,
@@ -95,6 +104,6 @@ def main(area_id, monthly, model_nm, method):
 if __name__ == '__main__':
     for i in range(1, 13):
         for j in [1, 3, 6, 9, 12]:
-            for model_nm in ['LSTM', 'RNN', 'TCN']:
-                for method in ['VMD']:  #
+            for model_nm in ['LightGBM', 'XBGoost']:
+                for method in ['EEMD', 'VMD' ,'None']:  #
                     main(i, j, model_nm, method)
