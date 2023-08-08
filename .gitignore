@@ -3,7 +3,9 @@
 cache/ShaanXi
 db
 log
-nc
+nc/emt
 *.nc
 project
 save
+data/shaanxi
+nc/spei
